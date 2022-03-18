@@ -1,0 +1,239 @@
+---
+title: "Police Incident Trend in MN (2020~2021.05)"
+author: "Brandon Park"
+output: 
+ html_document:
+  toc: yes
+  theme: cerulean
+  highlight: tango
+  code_folding: hide
+
+---
+\
+\
+\
+\
+\
+
+<center>
+![](mnlogo.png)
+</center>
+
+\
+\
+
+# 1. Introduction
+
+Minneapolis has been known for its high quality of life across the states with the astonishing city nature of the Mississippi River. However, It is also infamously famous for the death of George Floyd on May, 2020. This analysis is to find out the trend of the police incidents in Minneapolis since 2020 to see if there is **any changes in safety** before and after the Mr.Floyd's death.
+
+\
+\
+\
+
+
+```{r read, echo=TRUE, message=FALSE, warning=FALSE}
+
+
+library("tidyverse")
+library("leaflet")
+library("zoo")
+library("ggthemes")
+library("knitr")
+library("shiny")
+
+# Import data sets
+incident_2020 <- read_csv("Police_Incidents_2020.csv")
+incident_2021 <- read_csv("Police_Incidents_2021.csv")
+
+```
+
+## Inspecting the Datasets {.tabset .tabset-fade .tabset-pills}
+
+### Head
+```{r head}
+knitr::kable(head(incident_2020,5),caption="Incidents (first 5 rows)")
+```
+
+### Summary
+```{r summary}
+summary(incident_2020)
+```
+
+### Structure
+```{r glimpse}
+glimpse(incident_2020)
+```
+
+\
+\
+\
+
+
+## Check the Missing Data
+
+ - Drop 11 rows that does not contain geo location
+ - Will leave those rows containing missing public address / neighborhood 
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# Adjust data type and concatenate 
+incident_2021$precinct <- as.character(incident_2021$precinct)
+incident_raw <- bind_rows(incident_2020, incident_2021)
+
+
+# Select relevant columns only
+incident_selected <- incident_raw %>% select(publicaddress, reportedDateTime,
+                                             description, centerLong,
+                                             centerLat, neighborhood,offense)
+
+# Parse datetime on reporteDateTime column
+
+incident_selected$reportedDateTime <- substr(incident_selected$reportedDateTime, 1,16)
+incident_selected$reportedDateTime <- as.character(incident_selected$reportedDateTime)
+incident_selected$reportedDateTime <- parse_datetime(incident_selected$reportedDateTime, "%Y/%m/%d %H:%M")
+incident_selected <- incident_selected %>% mutate(reportedDate = format(reportedDateTime, "%Y/%m")) 
+
+# Clean NA and zero value row 
+incident_selected <- incident_selected[incident_selected$centerLong != 0,]
+colSums(incident_selected ==0)
+
+```
+
+\
+\
+\
+
+
+# 2. Analysis
+
+## Crime Mapping with Leaflet 
+
+ - Plotting 60k+ police incidents in the OpenstreetMap of Minneapolis
+ - This map is **interactive map** which you can zoom in/out 
+ - Also, **details of the each incident are available** once zoom until the end
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Plot on map by leaflet
+incident_selected %>% leaflet() %>% 
+  addProviderTiles(providers$Stamen.TonerLite) %>% 
+  addMarkers(label = incident_selected$description,
+             clusterOptions = markerClusterOptions(),
+             lng = incident_selected$centerLong, lat = incident_selected$centerLat,
+             popup = paste("<b>","Neighborhood:","</b>",
+                           incident_selected$neighborhood,"<br>",
+                           "<b>","Address:","</b>",
+                           incident_selected$publicaddress,"<br>",
+                           "<b>","Time:","</b>",
+                           incident_selected$reportedDateTime)) %>%
+  addMiniMap(toggleDisplay = TRUE,tiles = providers$Stamen.TonerLite)
+```
+
+\
+\
+\
+
+
+## Trend of Police Incidents Since 2020
+
+ - Annotation in the graph shows the death of George Floyd on **May 2020**
+ - The total police incidents seems to be **increasing** since May 2020
+ - From 2021, the number of incidents became **similar to the previous year on yoy basis**
+
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Summarise by date and plot 
+summarised_incident_selected <- incident_selected %>% 
+  filter(reportedDate != "2021/05") %>%
+  group_by(reportedDate) %>%
+  summarise(num_case = n()) 
+
+ggplot(summarised_incident_selected, aes(reportedDate, num_case, group=1))+
+  geom_col(fill='red')+expand_limits(y = 0)+  theme_tufte()+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, vjust = 0.5))+
+  xlab("") + ylab("")+
+  annotate("point", x = '2020/05', y = 2000, colour = "blue", size=3,shape=8) +
+  annotate("text", x = '2020/05', y = 2000, label = "Death of G.F", colour = "blue", vjust = -1)
+
+
+```
+
+\
+\
+\
+
+## Top 10 Neighborhood with the Most Police Incidents
+
+ - In addition to the previous plot, below graph shows the list of top 10 neighborhood where the most police incidents occurred
+ - **Downtown West, Whittier, Marcy Holmes** were top 3 neighborhood
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+top_10_neighbor <- incident_selected %>% 
+  group_by(neighborhood) %>% 
+  count(sort=TRUE) %>% ungroup() %>% 
+  top_n(10) %>% mutate(neighborhood = fct_reorder(neighborhood,n))
+
+
+ggplot(top_10_neighbor, aes(n,neighborhood)) +
+  geom_point(size = 12) +
+  geom_segment(aes(xend = 30, yend = neighborhood), size = 2) +
+  geom_text(aes(label = round(n,1)), color = "white", size = 4) +
+  #scale_x_continuous("", expand = c(0,0), limits = c(30,90), position = "top") +
+  scale_color_gradientn(colors = palette) +
+  theme(axis.line.y = element_blank(),
+      axis.ticks.y = element_blank(),
+      axis.text = element_text(color="black"),
+      axis.title = element_blank(),
+      legend.position = "none")
+
+```
+
+\
+\
+\
+
+
+## Police Incidents Near Univ. Minnesota
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+univ_neighbor = c("Cedar Riverside",
+                  "Como",
+                  "University of Minnesota",  
+                  "Prospect Park - East River Road",
+                  "Marcy Holmes")
+
+near_univ_neighbor <- incident_selected %>% 
+  filter(neighborhood==univ_neighbor) %>%
+  filter(reportedDate != "2021/05") %>%
+  group_by(reportedDate,neighborhood) %>% 
+  count() 
+
+ggplot(near_univ_neighbor, aes(reportedDate, n,fill=neighborhood)) + 
+  geom_col() + 
+  xlab("") + ylab("")+
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+
+ - Univ. Minnesota is located at the heart of Minneapolis, surrounded by 5 neighborhood
+ - Most univ. students find it hard to seek for a safe place to live
+ - Marcy Holmes, where Dinky Town is located at, might not be a good place in terms of police incidents
+
+\
+\
+\
+
+# 3. Conclusion
+
+ - We were able to notice the increment of police incident in MN **after the death of George Floyd May 2020**
+ - Fortunately, overall police incidents is decreasing in Minneapolis from 2021
+ - If you are a student in Univ. of Minnesota, you better find the place **other than Marcy Holmes!**
+ - For further suggestion on this analysis, please contact the author by brandon.swpark@gmail.com
+
+\
+\
+\
+
