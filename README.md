@@ -3,7 +3,7 @@
 
 # Minnesota_Police_Incidents_Viz_```R``` & ```Leaflet```
 
-![Alt Text](https://github.umn.edu/park2599/R_Minnesota_Police_incidents/blob/master/mnlogo.png)
+![Alt Text](https://github.com/brandon-park/Minnesota_Police_Incidents_Viz_R-Leaflet/blob/main/mnlogo.png)
 
 
 
@@ -23,9 +23,9 @@ Minneapolis has been known for its high quality of life across the states with t
 
 * Sample choropleth
 
-<img src="https://github.umn.edu/park2599/R_Minnesota_Police_incidents/blob/master/Choropleth.JPG" width="1000">
+<img src="https://github.com/brandon-park/Minnesota_Police_Incidents_Viz_R-Leaflet/blob/main/etc/Choropleth.JPG" width="1000">
 
 
 * Sample bar chart
 
-<img src="https://github.umn.edu/park2599/R_Minnesota_Police_incidents/blob/master/Bar_chart.png" width="1000">
+<img src="https://github.com/brandon-park/Minnesota_Police_Incidents_Viz_R-Leaflet/blob/main/etc/Bar_chart.png" width="1000">
