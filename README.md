@@ -23,7 +23,7 @@ Minneapolis has been known for its high quality of life across the states with t
 
 * Sample choropleth
 
-<img src="https://github.com/brandon-park/Minnesota_Police_Incidents_Viz_R-Leaflet/blob/main/etc/Choropleth.JPG" width="1000">
+<img src="https://github.com/brandon-park/Minnesota_Police_Incidents_Viz_R-Leaflet/blob/main/leaflet_demo.gif?raw=true" width="1000">
 
 
 * Sample bar chart
