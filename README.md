@@ -18,8 +18,7 @@ Minneapolis has been known for its high quality of life across the states with t
  - Analyze the trend of police incident in the neiborhood near U of M campus
 
 
-## For entire analysis, please check out  ```MN_police_incidents_20_21.html```
-
+## For entire analysis, please check out [HERE](https://htmlpreview.github.io/?https://github.com/brandon-park/Minnesota_Police_Incidents_Viz_R-Leaflet/blob/main/MN_police_incidents_20_21.html)
 
 * Sample choropleth
 
